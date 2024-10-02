@@ -9,7 +9,8 @@ const DEFAULT_CONFIG_FILE_LOCATION := "res://default_config.cfg"
 
 enum ConfigSectionName {
 	OPTIONS_AUDIO,
-	OPTIONS_GRAPHICS
+	OPTIONS_GRAPHICS,
+	OPTIONS_GAME
 }
 
 static var config_file : ConfigFile
