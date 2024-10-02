@@ -1,0 +1,170 @@
+name: Build game using Godot 4.3
+
+env:
+  GODOT_VERSION: 4.3
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    container:
+      image: barichello/godot-ci:4.3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Move export templates into position
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Build
+        run: godot -v --export-release --headless "Web" --output builds/web
+
+      - name: Add coi-service-worker
+        run: |
+          git clone https://github.com/gzuidhof/coi-serviceworker.git
+          mv coi-serviceworker/coi-serviceworker.js builds/web/coi-serviceworker.js
+          sed -i '3 i <script src="coi-serviceworker.js"></script>' builds/web/index.html
+
+      - name: Deploy to Github Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./builds/web
+          force_orphan: true
+          user_name: "github-ci[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_message: "UPDATE GITHUB PAGES"
+
+      - name: Zip Web artifacts
+        run: zip -r game_web.zip builds/web
+
+      - name: Upload Web artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: game_web
+          path: game_web.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    container:
+      image: barichello/godot-ci:4.3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Move export templates into position
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Build for Linux
+        run: godot -v --export-release --headless "Linux/X11" --path . --output "builds/linux/game.x86_64"
+
+      - name: Zip Linux artifacts
+        run: zip -r game_linux.zip builds/linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: game_linux
+          path: game_linux.zip
+
+  build-windows:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    container:
+      image: barichello/godot-ci:4.3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Move export templates into position
+        run: |
+          mkdir -v -p ~/.local/share/godot/export_templates
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: Build for windows
+        run: godot -v --export-release --headless "Windows Desktop" --path . --output "builds/windows/game.x86_64"
+
+      - name: Zip Windows artifacts
+        run: zip -r game_windows.zip builds/windows
+
+      - name: Upload windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: game_windows
+          path: game_windows.zip
+  
+  release:
+    needs: [build-web, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up GitVersion
+        uses: gittools/actions/gitversion/setup@v3.0.0
+        with:
+          versionSpec: '6.x'
+
+      - name: Execute GitVersion
+        id: compute_version
+        uses: gittools/actions/gitversion/execute@v3.0.0
+        with:
+          useConfigFile: true
+          configFilePath: GitVersion.yml
+
+      - name: Get branch name
+        id: get_branch
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: game_web
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: game_linux
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: game_windows
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: ${{ steps.compute_version.outputs.fullSemVer }}
+          tag_name: ${{ steps.compute_version.outputs.fullSemVer }}
+          generate_release_notes: true
+          draft: false
+          prerelease: true
+          files: |
+            game_web.zip
+            game_linux.zip
+            game_windows.zip
