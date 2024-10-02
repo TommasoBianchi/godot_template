@@ -26,7 +26,7 @@ jobs:
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
 
       - name: Build
-        run: godot -v --export-release --headless "Web" --output builds/web
+        run: godot -v --export-release --headless "Web" --output "builds/web/index.html"
 
       - name: Add coi-service-worker
         run: |
