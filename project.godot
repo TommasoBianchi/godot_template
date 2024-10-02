@@ -11,6 +11,8 @@ config_version=5
 [application]
 
 config/name="GodotTemplate"
+run/main_scene="res://scenes/example/example.tscn"
+config/features=PackedStringArray("4.3")
 config/icon="res://assets/graphics/icons/icon.svg"
 
 [rendering]
