@@ -168,3 +168,53 @@ jobs:
             game_web.zip
             game_linux.zip
             game_windows.zip
+    
+  publish-itch:
+    needs: [build-web, build-linux, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: game_web
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: game_linux
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: game_windows
+
+      - name: Publish web artifacts to itch.io
+        uses: manleydev/butler-publish-itchio-action@v1.0.3
+        env:
+          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+          CHANNEL: web
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+          ITCH_USER: ${{ vars.ITCH_USER }}
+          PACKAGE: game_web.zip
+          VERSION: ${{ steps.compute_version.outputs.fullSemVer }}
+
+      - name: Publish linux artifacts to itch.io
+        uses: manleydev/butler-publish-itchio-action@v1.0.3
+        env:
+          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+          CHANNEL: linux
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+          ITCH_USER: ${{ vars.ITCH_USER }}
+          PACKAGE: game_linux.zip
+          VERSION: ${{ steps.compute_version.outputs.fullSemVer }}
+
+      - name: Publish windows artifacts to itch.io
+        uses: manleydev/butler-publish-itchio-action@v1.0.3
+        env:
+          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+          CHANNEL: windows
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+          ITCH_USER: ${{ vars.ITCH_USER }}
+          PACKAGE: game_windows.zip
+          VERSION: ${{ steps.compute_version.outputs.fullSemVer }}
