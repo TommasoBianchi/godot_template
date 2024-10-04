@@ -171,6 +171,7 @@ jobs:
     
   publish-itch:
     needs: [build-web, build-linux, build-windows]
+    if: ${{ vars.ITCH_GAME != '' }}
     runs-on: ubuntu-latest
     steps:
 
