@@ -192,7 +192,7 @@ jobs:
       - name: Publish web artifacts to itch.io
         uses: manleydev/butler-publish-itchio-action@v1.0.3
         env:
-          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+          BUTLER_CREDENTIALS: ${{ secrets.ITCH_API_KEY }}
           CHANNEL: web
           ITCH_GAME: ${{ vars.ITCH_GAME }}
           ITCH_USER: ${{ vars.ITCH_USER }}
@@ -202,7 +202,7 @@ jobs:
       - name: Publish linux artifacts to itch.io
         uses: manleydev/butler-publish-itchio-action@v1.0.3
         env:
-          BUTLER_CREDENTIALS: ${{ secrets.BUTLER_CREDENTIALS }}
+          BUTLER_CREDENTIALS: ${{ secrets.ITCH_API_KEY }}
           CHANNEL: linux
           ITCH_GAME: ${{ vars.ITCH_GAME }}
           ITCH_USER: ${{ vars.ITCH_USER }}
